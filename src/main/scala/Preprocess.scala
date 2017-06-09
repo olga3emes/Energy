@@ -6,7 +6,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
   * Created by olga on 2/6/17.
   */
-object Edificio_4 {
+object Preprocess {
 
 
   def weekendsOfYear(year: Int) : List[String] = {
@@ -96,18 +96,18 @@ object Edificio_4 {
 
     //System.setProperty("hadoop.home.dir", "c:\\Winutil\\")
 
-    val conf = new SparkConf().setAppName("Edificio_4").setMaster("local")
+    val conf = new SparkConf().setAppName("Preprocess").setMaster("local")
     val sc = new SparkContext(conf)
 
-    /* ESTRUCTRA DEL CSV:
+    /* CSV Columns:
     ---------------------------
-    1. Identificador del edificio.
-    2. Consumo en kWh (kilovatio-hora).
-    3. Año.
-    4. Número de mes (del 1 al 12).
-    5. Día del mes.
-    6. Hora (de 0 a 23).
-    7. Minutos (0, 15, 30 o 45). (Se recogen 4 datos por hora)
+    1. Building id
+    2. Consumption (kWh)
+    3. Year
+    4. Month (1-12)
+    5. Day
+    6. Hour (0 - 23)
+    7. Minutes (0, 15, 30 or 45) (4 data per hour)
     ----------------------------- */
 
     val dates365 = sc.textFile("365.csv")
