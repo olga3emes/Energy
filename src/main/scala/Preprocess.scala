@@ -1,8 +1,10 @@
 import java.util.{Calendar, GregorianCalendar}
+
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
+
 
 /**
   * Created by olga on 2/6/17.
@@ -152,6 +154,8 @@ object Preprocess {
 
     //Test if we have missing days
 
+    println("----------MISSING VALUES-----------")
+
     def missingDays(year: Int, leapYear: Boolean, mapDateTime: RDD[(String, Iterable[String])]): List[String] = {
       if (leapYear) {
         println((366 - (mapDateTime.collect().length)) + " days missing")
@@ -185,6 +189,9 @@ object Preprocess {
 
     println(daysMissing.filter(_._2.nonEmpty).collect().toList)
 
+
+    println("----------------------------------\n")// End of Missing Values
+
     println("Day consumption")
 
     val consumoDia = data.map(line => (line._8, line._2)).reduceByKey(_ + _).sortBy(_._1)
@@ -195,93 +202,10 @@ object Preprocess {
 
     println("Average consumption per day: " + average)*/
 
-    val max = consumoDia.collect().maxBy(_._2)
-    val min = consumoDia.collect().minBy(_._2)
-
-    println("Day with more consumption:" + max +" and day with least consumption: "+ min)
-
-    val range = max._2 - min._2
-    println("Range: "+ range)
-
-    var valuesStatistics = new DescriptiveStatistics()
-    consumoDia.values.collect().foreach(v => valuesStatistics.addValue(v))
-
-    // Get first and third quartiles and then calc IQR
-    val Q1 = valuesStatistics.getPercentile(25)
-    val Q3 = valuesStatistics.getPercentile(75)
-    val IQR = Q3 - Q1
-
-    println("IQR: "+ IQR)
-
-    //Outliers limits
-
-    val lower = Q1 - 1.5*IQR
-    val upper = Q3 + 1.5*IQR
-
-    println("----- Outliers Limits ----- \n Lower limit: "+lower +"amd upper limit: "+upper + "\n----------------------")
-
-    println("Mean: " + valuesStatistics.getMean())
-    println("Geometric Mean: " + valuesStatistics.getGeometricMean())
-    println("Max: " +valuesStatistics.getMax())
-    println("Min:" +valuesStatistics.getMin())
-    if (consumoDia.collect().size % 2 == 0) {
-
-      val center1 = consumoDia.sortBy(_._2).values.collect.apply(consumoDia.collect().size / 2)
-      val center2 = consumoDia.sortBy(_._2).values.collect.apply((consumoDia.collect().size / 2) + 1)
-      val median = (center1 + center2)/2
-      println("Median: "+ median)
-
-    } else {
-      val position = ((consumoDia.collect().size / 2) + 0.5).toInt
-      val median = consumoDia.sortBy(_._2).values.collect.apply(position)
-      println("Median: "+ median)
-    }
-
-    println("Variance :" +valuesStatistics.getVariance())
-    println("Population Variance :"+ valuesStatistics.getPopulationVariance())
-    println("Standard Deviation: "+valuesStatistics.getStandardDeviation())
-    println("Kurtosis: " + valuesStatistics.getKurtosis()) // Concentration ( Normal value between : +- 0.5)
-    println("Skewness: " + valuesStatistics.getSkewness()) //Oblique - Symmetry Coeficient ( Normal value between : +- 0.5)
-
-    val position1 = ((consumoDia.collect().size * 5) / 100).round
-    val position2 = ((consumoDia.collect().size * 95) / 100).round
-    val interval = consumoDia.sortBy(_._2).values.collect().slice(position1,position2)
-    val croppedAverage = interval.toList.sum / interval.size
-    println("Cropped mean: " + croppedAverage)
-
-    val variationCoeficient = valuesStatistics.getStandardDeviation/valuesStatistics.getMean()
-    println("Variation Coeficient: " + variationCoeficient)
-
-
-    println("\n--------With Cropped Mean -----------")
-
-    val variance2 = consumoDia.values.map(a => math.pow(a - croppedAverage,2)).sum()/consumoDia.collect().size
-    println ("Variance " + variance2)
-
-    val standardDeviation2 = math.sqrt(variance2)
-    println("Standard Deviation: "+ standardDeviation2)
-
-    val variationCoeficient2 = standardDeviation2/croppedAverage
-    println("Variation Coeficient: " + variationCoeficient2)
-
-    println("\n--------With Geometric Mean -----------")
-
-    val variance3 = consumoDia.values.map(a => math.pow(a - valuesStatistics.getGeometricMean ,2)).sum()/consumoDia.collect().size
-    println ("Variance " + variance3)
-
-    val standardDeviation3 = math.sqrt(variance3)
-    println("Standard Deviation: "+ standardDeviation3)
-
-    val variationCoeficient3 = standardDeviation3/croppedAverage
-    println("Variation Coeficient: " + variationCoeficient3)
-
-    println("\n")
-
 
     println("Day consumption per hour")
     val consumoPorHora = data.map(line => (line._8 + " - " + line._6, line._2)).reduceByKey(_ + _).sortBy(_._1)
     println((consumoPorHora.collect().toList))
-
 
     /*println("Average consumption per hour and number of registries")
 
@@ -357,9 +281,113 @@ object Preprocess {
       println(consumption.values.sum / consumption.size)
     }*/
 
+    println("Mean consumption of year per hour:minute")
+
+    val consumoHoraMinuto = data.map(line => (line._9, line._2)).groupByKey().sortBy(_._1)
+
+    val chm = consumoHoraMinuto.map(line => (line._1, line._2.sum / line._2.size)).sortBy(_._1)
+
+    println(chm.collect().toList)
+
+    println("Mean consumption of month per hour:minute")
+
+    val consumoMesHoraMinuto = data.map(line => (line._4 + "-" + line._9, line._2)).groupByKey().sortBy(_._1)
+
+    val cmhm = consumoMesHoraMinuto.map(line => (line._1, line._2.sum / line._2.size)).sortBy(_._1)
+
+    println(cmhm.collect().toList)
+
+    val max = cmhm.collect().maxBy(_._2)
+    val min = cmhm.collect().minBy(_._2)
+
+    println("Day with more consumption:" + max + " and day with least consumption: " + min)
+
+    val range = max._2 - min._2
+    println("Range: " + range)
+
+    var valuesStatistics = new DescriptiveStatistics()
+    cmhm.values.collect().foreach(v => valuesStatistics.addValue(v))
+
+    // Get first and third quartiles and then calc IQR
+    val Q1 = valuesStatistics.getPercentile(25)
+    val Q3 = valuesStatistics.getPercentile(75)
+    val IQR = Q3 - Q1
+
+    println("IQR: " + IQR)
+
+    //Outliers limits
+
+    val lower = Q1 - 1.5 * IQR
+    val upper = Q3 + 1.5 * IQR
+
+    println("\n----- Outliers Limits ----- \n Lower limit: " + lower + "amd upper limit: " + upper + "\n----------------------")
+
+    val upperOutliers= cmhm.filter(x=> x._2 > upper).collect()
+    val lowerOutliers= cmhm.filter(x=> x._2 < lower).collect()
+
+    println("----- Outliers ----- \n " + upperOutliers.toList.union(lowerOutliers.toList) + "\n----------------------")
+
+    println("Mean: " + valuesStatistics.getMean())
+    println("Geometric Mean: " + valuesStatistics.getGeometricMean())
+    println("Max: " + valuesStatistics.getMax())
+    println("Min:" + valuesStatistics.getMin())
+    if (cmhm.collect().size % 2 == 0) {
+
+      val center1 = cmhm.sortBy(_._2).values.collect.apply(cmhm.collect().size / 2)
+      val center2 = cmhm.sortBy(_._2).values.collect.apply((cmhm.collect().size / 2) + 1)
+      val median = (center1 + center2) / 2
+      println("Median: " + median)
+
+    } else {
+      val position = ((cmhm.collect().size / 2) + 0.5).toInt
+      val median = cmhm.sortBy(_._2).values.collect.apply(position)
+      println("Median: " + median)
+    }
+
+    println("Variance :" + valuesStatistics.getVariance())
+    println("Population Variance :" + valuesStatistics.getPopulationVariance())
+    println("Standard Deviation: " + valuesStatistics.getStandardDeviation())
+    println("Kurtosis: " + valuesStatistics.getKurtosis()) // Concentration ( Normal value between : +- 0.5)
+    println("Skewness: " + valuesStatistics.getSkewness()) //Oblique - Symmetry Coeficient ( Normal value between : +- 0.5)
+
+    val position1 = ((cmhm.collect().size * 5) / 100.0).round
+    val position2 = ((cmhm.collect().size * 95) / 100.0).round
+
+
+
+    val interval = cmhm.sortBy(_._2).values.collect().slice(position1.toInt, position2.toInt)
+    val croppedAverage = interval.toList.sum / interval.size
+    println("Cropped mean: " + croppedAverage)
+
+    val variationCoeficient = valuesStatistics.getStandardDeviation / valuesStatistics.getMean()
+    println("Variation Coeficient: " + variationCoeficient)
+
+
+    println("\n--------With Cropped Mean -----------")
+
+    val variance2 = cmhm.values.map(a => math.pow(a - croppedAverage, 2)).sum() / cmhm.collect().size
+    println("Variance " + variance2)
+
+    val standardDeviation2 = math.sqrt(variance2)
+    println("Standard Deviation: " + standardDeviation2)
+
+    val variationCoeficient2 = standardDeviation2 / croppedAverage
+    println("Variation Coeficient: " + variationCoeficient2)
+
+    println("\n--------With Geometric Mean -----------")
+
+    val variance3 = cmhm.values.map(a => math.pow(a - valuesStatistics.getGeometricMean, 2)).sum() / cmhm.collect().size
+    println("Variance " + variance3)
+
+    val standardDeviation3 = math.sqrt(variance3)
+    println("Standard Deviation: " + standardDeviation3)
+
+    val variationCoeficient3 = standardDeviation3 / croppedAverage
+    println("Variation Coeficient: " + variationCoeficient3)
+
+    println("\n")
+
 
   } //End Main method
 
-}
-
-//End object
+} //End object
