@@ -22,6 +22,23 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: aopalliance:aopalliance:1.0:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty.orbit:javax.servlet:3.0.0.v201112011016:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-xml:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-webapp:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-util:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-servlet:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-server:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-security:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-io:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-http:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.eclipse.jetty:jetty-continuation:8.1.13.v20130916:jar" level="project" />
+    <orderEntry type="library" name="SBT: net.databinder:unfiltered_2.11:0.8.3:jar" level="project" />
+    <orderEntry type="library" name="SBT: net.databinder:unfiltered-util_2.11:0.8.3:jar" level="project" />
+    <orderEntry type="library" name="SBT: net.databinder:unfiltered-jetty_2.11:0.8.3:jar" level="project" />
+    <orderEntry type="library" name="SBT: net.databinder:unfiltered-filter_2.11:0.8.3:jar" level="project" />
+    <orderEntry type="library" name="SBT: commons-io:commons-io:2.4:jar" level="project" />
+    <orderEntry type="library" name="SBT: com.quantifind:wisp_2.11:0.0.4:jar" level="project" />
+    <orderEntry type="library" name="SBT: com.quantifind:sumac_2.11:0.3.0:jar" level="project" />
     <orderEntry type="library" name="SBT: xmlenc:xmlenc:0.52:jar" level="project" />
     <orderEntry type="library" name="SBT: oro:oro:2.0.8:jar" level="project" />
     <orderEntry type="library" name="SBT: org.xerial.snappy:snappy-java:1.1.2.6:jar" level="project" />
@@ -114,7 +131,6 @@
     <orderEntry type="library" name="SBT: io.dropwizard.metrics:metrics-core:3.1.2:jar" level="project" />
     <orderEntry type="library" name="SBT: commons-net:commons-net:2.2:jar" level="project" />
     <orderEntry type="library" name="SBT: commons-lang:commons-lang:2.5:jar" level="project" />
-    <orderEntry type="library" name="SBT: commons-io:commons-io:2.1:jar" level="project" />
     <orderEntry type="library" name="SBT: commons-httpclient:commons-httpclient:3.1:jar" level="project" />
     <orderEntry type="library" name="SBT: commons-digester:commons-digester:1.8:jar" level="project" />
     <orderEntry type="library" name="SBT: commons-configuration:commons-configuration:1.6:jar" level="project" />
@@ -139,6 +155,5 @@
     <orderEntry type="library" name="SBT: com.esotericsoftware:minlog:1.3.0:jar" level="project" />
     <orderEntry type="library" name="SBT: com.esotericsoftware:kryo-shaded:3.0.3:jar" level="project" />
     <orderEntry type="library" name="SBT: com.clearspring.analytics:stream:2.7.0:jar" level="project" />
-    <orderEntry type="library" name="org.singlespaced:scalajs-d3_sjs0.6_2.12:0.3.4" level="project" />
   </component>
 </module>
