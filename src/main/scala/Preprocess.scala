@@ -134,7 +134,7 @@ object Preprocess {
     val dates365 = sc.textFile("365.csv")
     val dates366 = sc.textFile("366.csv")
 
-    val file = sc.textFile("E48/consumo_48_2016.csv") //Next
+    val file = sc.textFile("E48/consumo_48_2015.csv") //Next
 
     println("-------------"+file.name+"---------------");
 
@@ -221,8 +221,19 @@ object Preprocess {
     println("\nAverage consumption per day: " + average)
 
 
-    println("Day consumption per hour")
+    println("\nValues zero or less than zero")
+
+    val consumoBusca0 = data.map(line => (line._8 + " - " + line._9, line._2)).reduceByKey(_ + _).sortBy(_._1)
+
+    val consumo0 = consumoBusca0.collect().toList.filter(s => s._2<=0)
+
+    println(consumo0)
+
+
+    println("\n Day consumption per hour")
+
     val consumoPorHora = data.map(line => (line._8 + " - " + line._6, line._2)).reduceByKey(_ + _).sortBy(_._1)
+
     println((consumoPorHora.collect().toList))
 
     println("Average consumption per hour and number of registries")
