@@ -1,5 +1,5 @@
 name := "Energy"
-version := "1.0"
+version := "2.0"
 
 
 scalaVersion := "2.11.8"

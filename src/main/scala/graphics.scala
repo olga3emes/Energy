@@ -6,7 +6,7 @@
 import com.quantifind.charts.Highcharts._
 
 
-object graphics {
+object graphics2 {
 
   def main(args: Array[String]): Unit = {
 
