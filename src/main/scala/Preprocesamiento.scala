@@ -117,26 +117,17 @@ object Preprocesamiento {
 
     //System.setProperty("hadoop.home.dir", "c:\\Winutil\\")
 
-    val conf = new SparkConf().setAppName("Preprocess").setMaster("local")
+    val conf = new SparkConf().setAppName("Preprocessamiento").setMaster("local")
     val sc = new SparkContext(conf)
 
-    /* CSV Columns:
-    ---------------------------
-    1. Building id
-    2. Consumption (kWh)
-    3. Year
-    4. Month (1-12)
-    5. Day
-    6. Hour (0 - 23)
-    7. Minutes (0, 15, 30 or 45) (4 data per hour)
-    ----------------------------- */
 
     val dates365 = sc.textFile("365.csv")
     val dates366 = sc.textFile("366.csv")
 
-    val id = "1"
+    val id = "48"
 
-    val file = sc.textFile("Datos Completos/"+id+"/Edificio "+id+" 2010.csv") //Next
+    val file = sc.textFile("Datos Completos/"+id+"/Edificio "+id+" 2016" +
+      ".csv") //Next
 
     println("-------------"+file.name+"---------------");
 
@@ -289,7 +280,7 @@ object Preprocesamiento {
 
     println(consumoMes.map(line => (line._2)).reduce(_ + _))
 
-    println("Weekends of year and consumption")
+    println("\nWeekends of year and consumption")
 
     val weekends = weekendsOfYear(year)
 
