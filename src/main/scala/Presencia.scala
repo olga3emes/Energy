@@ -1,4 +1,4 @@
-import java.io._
+import java.io.{File, PrintWriter}
 import java.util.{Calendar, GregorianCalendar}
 
 import com.quantifind.charts.Highcharts._
@@ -12,7 +12,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
   * Created by olga on 2/6/17.
   */
-object Agua {
+object Presencia{
 
 
   def weekendsOfYear(year: Int): List[String] = {
@@ -118,7 +118,7 @@ object Agua {
 
     //System.setProperty("hadoop.home.dir", "c:\\Winutil\\")
 
-    val conf = new SparkConf().setAppName("Agua").setMaster("local")
+    val conf = new SparkConf().setAppName("Presencia").setMaster("local")
     val sc = new SparkContext(conf)
 
     val zeroHour = List("0:00")
@@ -179,45 +179,34 @@ object Agua {
       "23:00","23:05","23:10","23:15","23:20","23:25","23:30","23:35","23:40","23:45","23:50","23:55")
 
 
-    /*val dates365 = sc.textFile("365_ndformat.csv")
-    val dates366 = sc.textFile("366_ndformat.csv")*/
-   val dates365 = sc.textFile("365.csv")
-    val dates366 = sc.textFile("366.csv")
+    val dates365 = sc.textFile("365_ndformat.csv")
+    val dates366 = sc.textFile("366_ndformat.csv")
 
+    val avaibleHours = hours
 
-    val avaibleHours = zeroHour
+    val id = "48"
 
-    val id = "47"
+    val part = ""
 
-    val anyo = List("2016","2017")
-    //val anyo = List("2010","2011","2012","2013","2014","2015","2016","2017")
+    //val anyo = List("2016","2017")
+    val anyo = List("2015","2016","2017")
+    //val anyo = List("2010","2011","2012","2013","2014","2015","2016", "2017")
 
+    val file = sc.textFile("Datos Presencia/" + id + "/Edificio " + id + " " +" presencia" + ".csv")
 
     for (a <- anyo) {
 
-
-      val file = sc.textFile("Datos Agua/" + id + "/Edificio " + id + " "+a+ " agua" + ".csv")
-
-      //val file = sc.textFile("Datos Agua/"+id+"/Edificio "+id+" " +a+ " agua" + " 15min"+ ".csv") //Next
+      val pw = new PrintWriter(new File(id + " "+part+" " + a + ".txt"))
 
 
-      val pw = new PrintWriter(new File(id + " " + a + ".txt"))
-
-
-      pw.write("------------- Edificio " + id + "---------------\n");
-
-      pw.write(a + "\n")
-
-      //pw.write("\nComentarios: datos cada 24 horas\n")
-      //pw.write("\nComentarios: datos cada 15 minutos\n")
-
+      pw.write(a+"\n")
 
       val data = file.map(line => {
 
 
-        val Array(d, m, y, h, min, s, mcubico) = line.replaceAll(" |/|:", ";").split(";").map(_.trim)
+        val Array(d, m, y, h, min, s, percent) = line.replaceAll(" |/|:", ";").split(";").map(_.trim)
 
-        val m3 = mcubico.toDouble
+        val percentage = percent.toDouble
         val year = y.toInt
         val month = m.toInt
         val day = d.toInt
@@ -228,7 +217,7 @@ object Agua {
         val time = h + ":" + min
 
 
-        (id, m3, year, month, day, hour, minute, date, time)
+        (id, percentage, year, month, day, hour, minute, date, time)
 
       })
 
@@ -272,15 +261,15 @@ object Agua {
 
       val mDays = missingDays(year, leapYear, datetime)
 
-      // Test missing hours per day
+      /*// Test missing hours per day
 
-     /* pw.write("\n Days and their missing hours\n")
+      pw.write("\n Days and their missing hours")
 
       val daysMissing = datetime.map(line => (line._1, avaibleHours.diff(line._2.toList))).sortBy(_._1)
 
-      pw.write(daysMissing.filter(_._2.nonEmpty).collect().toList.toString())*/
+      pw.write(daysMissing.filter(_._2.nonEmpty).collect().toList)
 
-
+*/
       pw.write("\n----------------------------------\n") // End of Missing Values
 
       pw.write("\nValues zero\n")
@@ -295,31 +284,33 @@ object Agua {
 
       val consumoless = consumoBusca0.collect().toList.filter(s => s._2 < 0)
 
-      pw.write(consumoless.length.toString())
+      pw.write(consumoless.length.toString)
 
-      pw.write("\n----------------------------------\n")
+      pw.write("\n ----------------------------------\n")
+
+/*
+      pw.write("Day occupancy")
+
+      val consumoDia = data.map(line => (line._8.toString(), line._2)).groupByKey().sortBy(_._1)
+
+      val consumoPorDia = consumoDia.map(line => (line._1, line._2.sum / line._2.size)).sortBy(_._1)
+      pw.write(consumoPorDia.collect().toList)
+
+      // plotColumns(consumoDia,"datetime","Day occupancy of year "+year )
+
+      val average = consumoPorDia.values.sum() / (consumoDia.values.collect().size)
+
+      pw.write("\nAverage occupancy per day: " + average)
 
 
-     /* pw.write("Day consumption")
+      pw.write("\nDay occupancy per hour")
 
-      val consumoDia = data.map(line => (line._8.toString(), line._2)).reduceByKey(_ + _).sortBy(_._1)
+      val consumoPorHora = data.map(line => (line._8 + " - " + line._6, line._2)).groupByKey().sortBy(_._1)
 
-      pw.write(consumoDia.collect().toList)
+      val consumoPorHora2 = consumoPorHora.map(line => (line._1, line._2.sum / line._2.size)).sortBy(_._1)
+      pw.write(consumoPorHora2.collect().toList)
 
-      // plotColumns(consumoDia,"datetime","Day consumption of year "+year )
-
-      val average = consumoDia.values.sum() / consumoDia.values.collect().size
-
-      pw.write("\nAverage consumption per day: " + average)
-
-
-      pw.write("\n Day consumption per hour")
-
-      val consumoPorHora = data.map(line => (line._8 + " - " + line._6, line._2)).reduceByKey(_ + _).sortBy(_._1)
-
-      pw.write((consumoPorHora.collect().toList))
-
-      pw.write("Average consumption per hour and number of registries")
+      pw.write("\nAverage occupancy per hour and number of registries")
 
       val consumoMedioPorHora = data.map(line => (line._8 + " - " + line._6, line._2)).groupByKey().sortBy(_._1)
 
@@ -327,45 +318,43 @@ object Agua {
 
       pw.write(consumoMedioPorHoraRegistros.collect().toList)
 
-      pw.write("\nMonth consumption")
+      pw.write("\nMonth occupancy")
 
-      val consumoMes = data.map(line => (line._4.toString, line._2)).reduceByKey(_ + _).sortBy(_._1)
+      val consumoMes2 = data.map(line => (line._4.toString, line._2)).groupByKey().sortBy(_._1)
+
+      val consumoMes = consumoMes2.map(line => (line._1, line._2.sum / line._2.size)).sortBy(_._1)
 
       pw.write(consumoMes.collect().toList)
 
-      //plotColumns(consumoMes,"datetime","Month consumption of year "+year )
+      //plotColumns(consumoMes,"datetime","Month occupancy of year "+year )
 
-      pw.write("\nAverage consumption per month ")
+      pw.write("\nYear average occupancy")
 
-      val consumoAño = consumoMes.map(line => (line._2)).reduce(_ + _)
+      val consumoAño = consumoMes.values.sum()
 
       pw.write(consumoAño / 12)
 
-      pw.write("\nYear consumption")
-
-      pw.write(consumoMes.map(line => (line._2)).reduce(_ + _))
-
-      pw.write("\nWeekends of year and consumption")
+      pw.write("\nWeekends of year and occupancy")
 
       val weekends = weekendsOfYear(year)
 
-      val weekendsConsumption = consumoDia.collect().toMap.filterKeys(k => weekends.contains(k))
+      val weekendsConsumption = consumoPorDia.collect().toMap.filterKeys(k => weekends.contains(k))
 
       pw.write(weekendsConsumption.toList.sorted)
 
-      pw.write("\nAverage consumption of weekends")
+      pw.write("\nAverage occupancy of weekends")
 
       pw.write(weekendsConsumption.values.sum / weekendsConsumption.size)
 
-      pw.write("Working days and consumption")
+      pw.write("\nWorking days and occupancy")
 
-      val workingDays = consumoDia.keys.collect().diff(weekends)
+      val workingDays = consumoPorDia.keys.collect().diff(weekends)
 
-      val workingDaysConsumption = consumoDia.collect().toMap.filterKeys(k => workingDays.contains(k))
+      val workingDaysConsumption = consumoPorDia.collect().toMap.filterKeys(k => workingDays.contains(k))
 
       pw.write(workingDaysConsumption.toList.sorted)
 
-      pw.write("\nAverage consumption of working days")
+      pw.write("\nAverage occupancy of working days")
 
       pw.write(workingDaysConsumption.values.sum / workingDaysConsumption.size)
 
@@ -386,16 +375,17 @@ object Agua {
 
         val weekdays = weekdayOfYear(year, i)
 
-        val consumption = consumoDia.collect().toMap.filterKeys(k => weekdays.contains(k))
+        val occupancy = consumoPorDia.collect().toMap.filterKeys(k => weekdays.contains(k))
 
-        //pw.write(consumption.toList.sorted)
+        //pw.write(occupancy.toList.sorted)
 
-        pw.write("\nAverage consumption on " + nameOfDay)
+        pw.write("\nAverage occupancy on " + nameOfDay)
 
-        pw.write(consumption.values.sum / consumption.size)
+        pw.write(occupancy.values.sum / occupancy.size)
       }
 
-      pw.write("\nMean consumption of year per hour:minute")
+
+      pw.write("\nMean occupancy of year per hour:minute")
 
       val consumoHoraMinuto = data.map(line => (line._9, line._2)).groupByKey().sortBy(_._1)
 
@@ -403,7 +393,7 @@ object Agua {
 
       pw.write(chm.collect().toList)
 
-      pw.write("\n Mean consumption of month per hour:minute")
+      pw.write("\nMean occupancy of month per hour:minute")
 
       val consumoMesHoraMinuto = data.map(line => (line._4 + "-" + line._9, line._2)).groupByKey().sortBy(_._1)
 
@@ -414,12 +404,12 @@ object Agua {
       val max = cmhm.collect().maxBy(_._2)
       val min = cmhm.collect().minBy(_._2)
 
-      pw.write("\n Register with more consumption:" + max + " and register with least consumption: " + min)
+      pw.write("\nRegister with more occupancy:" + max + " and register with least occupancy: " + min)
 
-      val maxDay = consumoDia.collect().maxBy(_._2);
-      val minDay = consumoDia.collect().minBy(_._2);
+      val maxDay = consumoPorDia.collect().maxBy(_._2);
+      val minDay = consumoPorDia.collect().minBy(_._2);
 
-      pw.write("\n Day with more consumption:" + maxDay + " and Day with least consumption: " + minDay)
+      pw.write("\nDay with more occupancy:" + maxDay + " and Day with least occupancy: " + minDay)
 
       val range = max._2 - min._2
       pw.write("\n Range: " + range)
@@ -502,15 +492,12 @@ object Agua {
 
       val variationCoefficient3 = standardDeviation3 / croppedAverage
       pw.write("Variation Coefficient: " + variationCoefficient3)
-      
-      */
-
+*/
       pw.write("\n")
+      pw.close()
 
-      pw.close
 
-    }//End for
-
+    }//end for
 
   } //End Main method
 
