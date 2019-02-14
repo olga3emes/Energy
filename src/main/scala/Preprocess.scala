@@ -3,38 +3,10 @@ import java.io.{File, PrintWriter}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
-import scala.util.control.Breaks._
-
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import scala.collection.mutable.ListBuffer
 
 object Preprocess {
-
-
-  def contador(indices:List[Int],horasFaltantes:List[String] ): String = {
-
-    var contador = indices.size
-
-    if (contador < 96 && !(contador >= 48 &&
-      (horasFaltantes.contains("12:00") || horasFaltantes.contains("16:00") || horasFaltantes.contains("20:00"))
-      )) { //Condicion Dia - Noche
-
-      println("Aproximar")
-      println(contador)
-      println(horasFaltantes)
-      println("")
-      contador = 0
-
-      return "Aproximar"
-
-    } else {
-      println("Eliminar")
-      println(contador)
-      println("")
-      contador = 0
-
-      return "Eliminar"
-    }
-  }
 
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -90,8 +62,7 @@ object Preprocess {
 
     val datetime = data.map(line => (line._8, line._9)).groupByKey().sortBy(_._1)
 
-
-    println("\n----------MISSING VALUES-----------\n")
+    println("Días Ausentes")
 
     def missingDays(year: Int, leapYear: Boolean, mapDateTime: RDD[(String, Iterable[String])]): List[String] = {
       if (leapYear) {
@@ -141,7 +112,6 @@ object Preprocess {
 
 
     var cdia = data.map(line => (List(line._8, line._9), line._2)).reduceByKey(_ + _).sortBy(c => (c._1(0), c._1(1))).collect()
-    //var consumoTotalDia = data.map(line => (line._8, line._2)).reduceByKey(_ + _).sortBy(_._1)
 
     var consumo = data.map(line => (List(line._8, line._9), line._2)).reduceByKey(_ + _).sortBy(c => (c._1(0), c._1(1))).collect()
     var consumoDia = data.map(line => (line._8, line._2)).reduceByKey(_ + _).sortBy(_._1).collect()
@@ -155,7 +125,8 @@ object Preprocess {
       if (day == "") {
         day = cd._1
         var actual = consumo.filter(s => s._1(0) == day)
-          if (actual.size < 288) {
+        val tam = actual.size
+          if (tam < 288) {
             println(day)
             var horas= new ListBuffer[String]
             var indices= new ListBuffer[Int]
@@ -186,26 +157,52 @@ object Preprocess {
                   conjunto+=lista
               }
             }
-            for(c <- conjunto){
+              if(!consumo.find(s=>s._1(0)==day).isEmpty) {
+                for(c <- conjunto){
 
                 if (c.size < 96 && !(c.size >= 48 &&
                   (c.contains(avaibleHours5.indexOf("12:00")) || c.contains(avaibleHours5.indexOf("16:00")) || c.contains(avaibleHours5.indexOf("20:00")))
-                  ) ) { //Condicion Dia - Noche
+                  )) { //Condicion Dia - Noche
 
-                  println("Aproximar" )
-                  println(c.size)
-                  println(c)
+                  if (!c.contains((avaibleHours5.indexOf("23:55")))) {
+
+                    val prox = avaibleHours5(c(c.size - 1) + 1)
+                    var acumulado = actual.find(s => s._1(1) == prox)
+
+
+                    var valuesStatistics = new DescriptiveStatistics()
+                    actual.toMap.values.foreach(v => valuesStatistics.addValue(v))
+                    var media = valuesStatistics.getGeometricMean
+                    var desvtip = valuesStatistics.getStandardDeviation
+                    var rmax= (media+desvtip)*(c.size +1)
+                    var rmin= (media-desvtip)*(c.size +1)
+
+                    var valor = acumulado.toList(0)._2/(c.size+1)
+
+                    if(valor >= rmin && valor <= rmax){
+                      for(cc<- c) {
+                       consumo=consumo.+:(List(day,avaibleHours5(cc)),valor)
+                      }
+                      consumo=consumo.filter(s=>s._1!=List(day,prox))
+                      consumo=consumo.+:(List(day,prox),valor)
+                    }else{
+                     println("regresion lineal")
+                    }
+
+                  } else {
+                    println("regresion lineal")
+                  }
+
                   println("")
                   contador = 0
 
                 } else {
-                  println("Eliminar Dia:" + day )
-                  println("antes: "+ consumo.size)
-                  consumo=consumo.filter(s=> s._1(0)!=day)
-                  println("ahora: "+ consumo.size)
+                  println("Eliminar Dia")
+                  consumo = consumo.filter(s => s._1(0) != day)
                   println("")
                   contador = 0
                 }
+              }
               }
             day = ""
           } else {
