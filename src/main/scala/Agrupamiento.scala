@@ -19,11 +19,11 @@ object Agrupamiento {
     val dates365 = sc.textFile("365.csv")
     val dates366 = sc.textFile("366.csv")
 
-    val id = "48"
+    val id = "1"
 
-    val anyo = List("2011","2012","2013","2014","2015","2016","2017")
+    val anyo = List("2012")
 
-      val pw = new PrintWriter(new File("Edificio "+id+".csv"))
+      val pw = new PrintWriter(new File("Edificio "+id+" 2012.csv"))
 
     for (a <- anyo) {
 
