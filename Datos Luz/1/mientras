@@ -1,0 +1,84 @@
+for (cd <- consumoDia) {
+      if (day == "") {
+        day = cd._1
+
+        var actual = consumo.filter(s => s._1(0) == day)
+
+
+
+          if (actual.size < 288) {
+            println(day)
+            var horasFaltantes= new ListBuffer[String]
+
+            var i = 0
+            for (act <- actual) {
+              var hour = avaibleHours5(i)
+              var existe = actual.find(_._1 == hour)
+              while (existe.isEmpty && hour != "23:55" && i<287) {
+                i = i + 1
+                hour = avaibleHours5(i)
+                horasFaltantes += hour
+                existe = actual.find(_._1(1) == hour)
+                if (existe.isEmpty)
+                  contador = contador + 1
+              }
+
+             /* while (act._1(1) != hour && hour != "23:55") {
+                contador = contador + 1
+                i = i + 1
+                horasFaltantes+=hour
+                hour = avaibleHours5(i)
+              }
+
+              if (act._1(1) != hour && hour == "23:55") {
+                contador = contador + 1
+                horasFaltantes+=hour
+              }
+
+                if (i<287 && hour != "23:55" && actual.size -1 == actual.indexOf(act)) {
+                  var existe = actual.find(_._1 == avaibleHours5(i + 1))
+                  while (existe.isEmpty && hour != "23:55" && i<287) {
+                    i = i + 1
+                    hour = avaibleHours5(i)
+                    horasFaltantes+=hour
+                    existe = actual.find(_._1(1) == hour)
+                    if (existe.isEmpty)
+                      contador = contador + 1
+                }
+              }*/
+
+              if(contador !=0) {
+                if (contador < 96 && !(contador >= 48 &&
+                  (horasFaltantes.contains("12:00") || horasFaltantes.contains("16:00") || horasFaltantes.contains("20:00"))
+                  ) ) { //Condicion Dia - Noche
+
+
+
+                  println("Aproximar")
+                  println(contador)
+                  println(horasFaltantes)
+                  horasFaltantes = new ListBuffer[String]
+                  println("")
+                  contador = 0
+
+                } else {
+                  println("Eliminar")
+                  println(contador)
+                  horasFaltantes = new ListBuffer[String]
+                  println("")
+                  contador = 0
+                }
+              }
+            } //end for actual
+            horasFaltantes = new ListBuffer[String]
+            day = ""
+            contador = 0
+
+
+          } else {
+            day = ""
+            contador = 0
+          }
+        }
+
+    }//end for

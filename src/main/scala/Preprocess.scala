@@ -10,6 +10,32 @@ import scala.collection.mutable.ListBuffer
 object Preprocess {
 
 
+  def contador(indices:List[Int],horasFaltantes:List[String] ): String = {
+
+    var contador = indices.size
+
+    if (contador < 96 && !(contador >= 48 &&
+      (horasFaltantes.contains("12:00") || horasFaltantes.contains("16:00") || horasFaltantes.contains("20:00"))
+      )) { //Condicion Dia - Noche
+
+      println("Aproximar")
+      println(contador)
+      println(horasFaltantes)
+      println("")
+      contador = 0
+
+      return "Aproximar"
+
+    } else {
+      println("Eliminar")
+      println(contador)
+      println("")
+      contador = 0
+
+      return "Eliminar"
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
@@ -28,9 +54,8 @@ object Preprocess {
 
     val a = 2012
 
-
     val file = sc.textFile("Datos Luz/" + id + "/Edificio " + id + " " + a + ".csv") //Next
-    // val file = sc.textFile("Datos Luz/" + id + "/prueba.csv") //Next
+   // val file = sc.textFile("Datos Luz/" + id + "/prueba.csv") //Next
 
 
     //val pw = new PrintWriter(new File("Nuevo " + id + " " + a + ".txt"))
@@ -88,8 +113,8 @@ object Preprocess {
 
     val mDays = missingDays(year, leapYear, datetime)
 
-    val avaibleHours15 = List("00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:00", "02:15", "02:30", "02:45", "03:00", "03:15", "03:30", "03:45", "04:00", "04:15", "04:30", "04:45", "05:00", "05:15", "05:30", "05:45", "06:00", "06:15", "06:30", "06:45", "07:00", "07:15", "07:30", "07:45", "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15", "12:30", "12:45", "13:00", "13:15", "13:30", "13:45", "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45", "16:00", "16:15", "16:30", "16:45", "17:00", "17:15", "17:30", "17:45", "18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00", "20:15", "20:30", "20:45", "21:00", "21:15", "21:30", "21:45", "22:00", "22:15", "22:30", "22:45", "23:00", "23:15", "23:30", "23:45")
-    val avaibleHours5 = List("00:00", "00:05", "00:10", "00:15", "00:20", "00:25", "00:30", "00:35", "00:40", "00:45", "00:50", "00:55",
+    var avaibleHours15 = List("00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:00", "02:15", "02:30", "02:45", "03:00", "03:15", "03:30", "03:45", "04:00", "04:15", "04:30", "04:45", "05:00", "05:15", "05:30", "05:45", "06:00", "06:15", "06:30", "06:45", "07:00", "07:15", "07:30", "07:45", "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15", "12:30", "12:45", "13:00", "13:15", "13:30", "13:45", "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45", "16:00", "16:15", "16:30", "16:45", "17:00", "17:15", "17:30", "17:45", "18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00", "20:15", "20:30", "20:45", "21:00", "21:15", "21:30", "21:45", "22:00", "22:15", "22:30", "22:45", "23:00", "23:15", "23:30", "23:45")
+    var avaibleHours5 = List("00:00", "00:05", "00:10", "00:15", "00:20", "00:25", "00:30", "00:35", "00:40", "00:45", "00:50", "00:55",
       "01:00", "01:05", "01:10", "01:15", "01:20", "01:25", "01:30", "01:35", "01:40", "01:45", "01:50", "01:55",
       "02:00", "02:05", "02:10", "02:15", "02:20", "02:25", "02:30", "02:35", "02:40", "02:45", "02:50", "02:55",
       "03:00", "03:05", "03:10", "03:15", "03:20", "03:25", "03:30", "03:35", "03:40", "03:45", "03:50", "03:55",
@@ -129,75 +154,62 @@ object Preprocess {
     for (cd <- consumoDia) {
       if (day == "") {
         day = cd._1
-
         var actual = consumo.filter(s => s._1(0) == day)
-
-
-
           if (actual.size < 288) {
             println(day)
-            var horasFaltantes= new ListBuffer[String]
-            var i = 0
+            var horas= new ListBuffer[String]
+            var indices= new ListBuffer[Int]
             for (act <- actual) {
-              var hour = avaibleHours5(i)
-
-              while (act._1(1) != hour && hour != "23:55") {
-                contador = contador + 1
-                i = i + 1
-                horasFaltantes+=hour
-                hour = avaibleHours5(i)
-              }
-
-              if (act._1(1) != hour && hour == "23:55") {
-                contador = contador + 1
-                horasFaltantes+=hour
-              }
-
-                if (i<287 && hour != "23:55" && actual.size -1 == actual.indexOf(act)) {
-                  var existe = actual.find(_._1 == avaibleHours5(i + 1))
-                  while (existe.isEmpty && hour != "23:55" && i<287) {
-                    i = i + 1
-                    hour = avaibleHours5(i)
-                    horasFaltantes+=hour
-                    existe = actual.find(_._1(1) == hour)
-                    if (existe.isEmpty)
-                      contador = contador + 1
-
+              horas+=act._1(1)
+            } //end for actual
+            var horasFaltantes=avaibleHours5.diff(horas)
+            for (hf <-horasFaltantes){
+              indices+=avaibleHours5.indexOf(hf)
+            }
+            var conjunto = new ListBuffer[ListBuffer[Int]]
+            var siguiente = 0
+            var lista = new ListBuffer[Int]
+            for(i <- indices){
+              if(siguiente!=0){
+                if(i!=siguiente) {
+                  conjunto += lista
+                  lista = new ListBuffer[Int]
                 }
+                  lista += i
+                  siguiente = i + 1
+                }else{
+                lista+=i
+                siguiente= i+1
               }
+              if(indices.last == i){
+                if(!conjunto.contains(lista))
+                  conjunto+=lista
+              }
+            }
+            for(c <- conjunto){
 
-              if(contador !=0) {
-                if (contador < 96 && !(contador >= 48 &&
-                  (horasFaltantes.contains("12:00") || horasFaltantes.contains("16:00") || horasFaltantes.contains("20:00"))
+                if (c.size < 96 && !(c.size >= 48 &&
+                  (c.contains(avaibleHours5.indexOf("12:00")) || c.contains(avaibleHours5.indexOf("16:00")) || c.contains(avaibleHours5.indexOf("20:00")))
                   ) ) { //Condicion Dia - Noche
 
-                  println("Aproximar")
-                  println(contador)
-                  println(horasFaltantes)
-                  horasFaltantes = new ListBuffer[String]
+                  println("Aproximar" )
+                  println(c.size)
+                  println(c)
                   println("")
                   contador = 0
 
                 } else {
-                  println("Eliminar")
-                  println(contador)
-                  horasFaltantes = new ListBuffer[String]
+                  println("Eliminar Dia:" + day )
+                  println("antes: "+ consumo.size)
+                  consumo=consumo.filter(s=> s._1(0)!=day)
+                  println("ahora: "+ consumo.size)
                   println("")
                   contador = 0
                 }
               }
-
-
-              i = i + 1
-            } //end for actual
-            horasFaltantes = new ListBuffer[String]
             day = ""
-            contador = 0
-
-
           } else {
             day = ""
-            contador = 0
           }
         }
 
