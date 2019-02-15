@@ -125,5 +125,6 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="org.apache.spark:spark-sql_2.10:2.2.3" level="project" />
   </component>
 </module>

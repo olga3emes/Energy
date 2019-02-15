@@ -3,7 +3,6 @@ import java.util.{Calendar, GregorianCalendar}
 
 import com.quantifind.charts.Highcharts._
 import com.quantifind.charts.highcharts.{Highchart, Title}
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}

@@ -1,12 +1,14 @@
 import java.io.{File, PrintWriter}
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+
 import scala.collection.mutable.ListBuffer
 
 object Preprocess {
+
 
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -21,7 +23,7 @@ object Preprocess {
     val dates365 = sc.textFile("365.csv")
     val dates366 = sc.textFile("366.csv")
 
-    val id = "1"
+    val id = "14"
 
 
     val a = 2012
@@ -84,6 +86,15 @@ object Preprocess {
 
     val mDays = missingDays(year, leapYear, datetime)
 
+    val consumoBusca0 = data.map(line => (line._8 + " - " + line._9, line._2)).reduceByKey(_ + _).sortBy(_._1)
+
+    val consumo0 = consumoBusca0.collect().toList.filter(s => s._2 == 0)
+    val consumoNeg = consumoBusca0.collect().toList.filter(s => s._2 < 0)
+
+    println(consumo0.length.toString()+ " Values cero\n")
+    println(consumoNeg.length.toString()+ " Values negativos\n")
+
+
     var avaibleHours15 = List("00:00", "00:15", "00:30", "00:45", "01:00", "01:15", "01:30", "01:45", "02:00", "02:15", "02:30", "02:45", "03:00", "03:15", "03:30", "03:45", "04:00", "04:15", "04:30", "04:45", "05:00", "05:15", "05:30", "05:45", "06:00", "06:15", "06:30", "06:45", "07:00", "07:15", "07:30", "07:45", "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15", "12:30", "12:45", "13:00", "13:15", "13:30", "13:45", "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45", "16:00", "16:15", "16:30", "16:45", "17:00", "17:15", "17:30", "17:45", "18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00", "20:15", "20:30", "20:45", "21:00", "21:15", "21:30", "21:45", "22:00", "22:15", "22:30", "22:45", "23:00", "23:15", "23:30", "23:45")
     var avaibleHours5 = List("00:00", "00:05", "00:10", "00:15", "00:20", "00:25", "00:30", "00:35", "00:40", "00:45", "00:50", "00:55",
       "01:00", "01:05", "01:10", "01:15", "01:20", "01:25", "01:30", "01:35", "01:40", "01:45", "01:50", "01:55",
@@ -127,7 +138,6 @@ object Preprocess {
         var actual = consumo.filter(s => s._1(0) == day)
         val tam = actual.size
           if (tam < 288) {
-            println(day)
             var horas= new ListBuffer[String]
             var indices= new ListBuffer[Int]
             for (act <- actual) {
@@ -184,22 +194,38 @@ object Preprocess {
                        consumo=consumo.+:(List(day,avaibleHours5(cc)),valor)
                       }
                       consumo=consumo.filter(s=>s._1!=List(day,prox))
-                      consumo=consumo.+:(List(day,prox),valor)
+                      consumo=consumo.+:(List(day,prox),valor).sortBy(c => (c._1(0), c._1(1)))
                     }else{
-                     println("regresion lineal")
+                      var indexedSeq= IndexedSeq(Seq(0.0,0.0))
+                      for(act<-actual){
+                        val i =avaibleHours5.indexOf(act._1(1))
+                        indexedSeq=indexedSeq.+:(Seq(i,act._2))
+                      }
+                      var rl= RegresionLineal.linear(indexedSeq)
+                      for(cc<- c) {
+                        var y= BigDecimal(rl._1 *cc + rl._2).setScale(3,BigDecimal.RoundingMode.HALF_UP).toDouble
+                        consumo=consumo.+:(List(day,avaibleHours5(cc)),y)
+                      }
                     }
 
                   } else {
-                    println("regresion lineal")
+                    var indexedSeq= IndexedSeq(Seq(0.0,0.0))
+                    for(act<-actual){
+                      val i =avaibleHours5.indexOf(act._1(1))
+                      indexedSeq=indexedSeq.+:(Seq(i,act._2))
+                    }
+                    var rl= RegresionLineal.linear(indexedSeq)
+                    for(cc<- c) {
+                      var y= BigDecimal(rl._1 *cc + rl._2).setScale(3,BigDecimal.RoundingMode.HALF_UP).toDouble
+                      consumo=consumo.+:(List(day,avaibleHours5(cc)),y)
+                    }
                   }
-
-                  println("")
                   contador = 0
 
                 } else {
-                  println("Eliminar Dia")
                   consumo = consumo.filter(s => s._1(0) != day)
-                  println("")
+                  cdia=cdia.filter(s=>s._1 !=day)
+                  println("eliminar" + day)
                   contador = 0
                 }
               }
@@ -211,6 +237,20 @@ object Preprocess {
         }
 
     }//end for
+
+    var pw = new PrintWriter(new File("Edificio "+id+" "+ year+" .csv"))
+
+    var total= 0.0
+    for(cdia <- consumoDia){
+      var con = consumo.filter(s=>s._1(0)==cdia._1)
+      total = BigDecimal(con.toMap.values.sum).setScale(3,BigDecimal.RoundingMode.HALF_UP).toDouble
+      val mes = cdia._1.split("/")(0)
+      val dia = cdia._1.split("/")(1)
+      if(total!=0.0)
+      pw.write(dia +"/"+mes+"/"+year+";"+total+"\n")
+
+    }
+    pw.close()
   }
 }
 

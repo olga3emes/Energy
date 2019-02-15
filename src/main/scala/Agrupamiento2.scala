@@ -3,8 +3,6 @@ import java.io.{File, PrintWriter}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.collection.mutable.ListBuffer
-
 object Agrupamiento2 {
 
 
